@@ -1,8 +1,18 @@
 import { redis } from "../lib/redis.js";
 import User from "../models/user.model.js";
 import jwt from "jsonwebtoken";
+// Diagnostic: in development, log whether JWT secrets are loaded (do not print the secret values)
+if (process.env.NODE_ENV !== "production") {
+	console.log("JWT secrets present - ACCESS:", !!process.env.ACCESS_TOKEN_SECRET, "REFRESH:", !!process.env.REFRESH_TOKEN_SECRET);
+}
 
 const generateTokens = (userId) => {
+	// Fail fast with a clear message if secrets are missing
+	if (!process.env.ACCESS_TOKEN_SECRET || !process.env.REFRESH_TOKEN_SECRET) {
+		const msg = "JWT secrets are not configured (ACCESS_TOKEN_SECRET / REFRESH_TOKEN_SECRET)";
+		console.error(msg);
+		throw new Error(msg);
+	}
 	const accessToken = jwt.sign({ userId }, process.env.ACCESS_TOKEN_SECRET, {
 		expiresIn: "15m",
 	});

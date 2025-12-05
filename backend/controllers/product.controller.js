@@ -40,20 +40,56 @@ export const getFeaturedProducts = async (req, res) => {
 };
 
 export const createProduct = async (req, res) => {
+	// Clean, merged implementation
 	try {
 		const { name, description, price, image, category } = req.body;
 
+		// Basic validation
+		if (!name || !description || price == null || !category) {
+			return res.status(400).json({ message: "Missing required product fields" });
+		}
+
 		let cloudinaryResponse = null;
 
+		// Only attempt upload if an image was provided and Cloudinary is configured
 		if (image) {
-			cloudinaryResponse = await cloudinary.uploader.upload(image, { folder: "products" });
+			const apiKey = process.env.CLOUDINARY_API_KEY || "";
+			const apiSecret = process.env.CLOUDINARY_API_SECRET || "";
+			const cloudName = process.env.CLOUDINARY_CLOUD_NAME || "";
+
+			// Basic heuristic to detect placeholder values
+			const looksLikePlaceholder = (val) => {
+				const v = String(val).toLowerCase();
+				return v.includes("your_") || v.includes("replace") || v.includes("changeme") || v.includes("example");
+			};
+
+			if (!apiKey || !apiSecret || !cloudName || looksLikePlaceholder(apiKey) || looksLikePlaceholder(apiSecret) || looksLikePlaceholder(cloudName)) {
+				console.warn("Cloudinary credentials missing or look like placeholders; skipping image upload");
+			} else {
+				try {
+					cloudinaryResponse = await cloudinary.uploader.upload(image, { folder: "products" });
+				} catch (uploadError) {
+					console.error("Cloudinary upload failed:", uploadError.message);
+					// Log the error but continue — create the product without an image
+					cloudinaryResponse = null;
+				}
+			}
+		}
+
+		// Determine which image to store:
+		// - prefer Cloudinary secure_url when available
+		// - otherwise, if the client provided a base64 image, store that as a fallback
+		const imageToStore = cloudinaryResponse?.secure_url ? cloudinaryResponse.secure_url : image ? image : "";
+
+		if (!cloudinaryResponse && image) {
+			console.warn("Saving provided base64 image to DB as Cloudinary upload was skipped/failed");
 		}
 
 		const product = await Product.create({
 			name,
 			description,
 			price,
-			image: cloudinaryResponse?.secure_url ? cloudinaryResponse.secure_url : "",
+			image: imageToStore,
 			category,
 		});
 

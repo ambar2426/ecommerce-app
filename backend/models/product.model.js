@@ -17,7 +17,8 @@ const productSchema = new mongoose.Schema(
 		},
 		image: {
 			type: String,
-			required: [true, "Image is required"],
+			// Make image optional so products can be created when Cloudinary upload is skipped
+			default: "",
 		},
 		category: {
 			type: String,

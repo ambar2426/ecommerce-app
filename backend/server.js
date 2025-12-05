@@ -23,6 +23,19 @@ const PORT = process.env.PORT || 5000;
 app.use(express.json({ limit: "10mb" })); // allows you to parse the body of the request
 app.use(cookieParser());
 
+// CORS middleware: allow requests from the frontend dev server and allow credentials (cookies)
+app.use((req, res, next) => {
+	const allowedOrigin = process.env.FRONTEND_URL || "http://localhost:5173";
+	res.header("Access-Control-Allow-Origin", allowedOrigin);
+	res.header("Access-Control-Allow-Credentials", "true");
+	res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+	res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+	if (req.method === "OPTIONS") {
+		return res.sendStatus(204);
+	}
+	next();
+});
+
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/cart", cartRoutes);

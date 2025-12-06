@@ -1,16 +1,16 @@
 import axios from "axios";
 
 // Use Vite env var (VITE_API) in the browser. `process` is not defined in the browser,
-// so don't rely on `process.env` here. If VITE_API isn't set for development, default
-// to the local backend URL used by this project.
-const API = import.meta.env.VITE_API || "http://localhost:5000";
+// so don't rely on `process.env` here. If VITE_API isn't set, fall back to the
+// public backend URL used for production.
+const API = import.meta.env.VITE_API || "https://ecommerce-app-9a4d.onrender.com";
 
-// In development, ensure the base URL points to the backend API namespace
-const devBase = API.endsWith("/") ? API.slice(0, -1) + "/api" : API + "/api";
+// Ensure we have a clean base that ends with `/api` for development.
+const devBase = API.replace(/\/$/, "") + "/api";
 
 const axiosInstance = axios.create({
 	baseURL: import.meta.env.DEV ? devBase : "/api",
-	withCredentials: true, // send cookies to the server
+	withCredentials: true,
 });
 
 export default axiosInstance;

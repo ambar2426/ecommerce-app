@@ -25,14 +25,27 @@ app.use(cookieParser());
 
 // CORS middleware: allow requests from the frontend dev server and allow credentials (cookies)
 app.use((req, res, next) => {
-	const allowedOrigin = process.env.FRONTEND_URL || "http://localhost:5173";
-	res.header("Access-Control-Allow-Origin", allowedOrigin);
+	const allowedOrigins = ["http://localhost:5173"||process.env.FRONTEND_URL];
+	if (process.env.FRONTEND_URL) allowedOrigins.push(process.env.FRONTEND_URL);
+	// allow the Vite dev server default host for local development
+	allowedOrigins.push("http://localhost:5173");
+
+	const requestOrigin = req.headers.origin;
+	if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
+		res.header("Access-Control-Allow-Origin", requestOrigin);
+	}
+
 	res.header("Access-Control-Allow-Credentials", "true");
-	res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+	res.header(
+		"Access-Control-Allow-Headers",
+		"Origin, X-Requested-With, Content-Type, Accept, Authorization"
+	);
 	res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+
 	if (req.method === "OPTIONS") {
 		return res.sendStatus(204);
 	}
+
 	next();
 });
 

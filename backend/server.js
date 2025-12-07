@@ -27,8 +27,9 @@ app.use(cookieParser());
 
 // ------------------- CORS ------------------- //
 const allowedOrigins = [
-  "https://ecommerce-app-sepia-kappa.vercel.app", // your frontend
-  "http://localhost:5173",                        // local dev
+  "https://ecommerce-app-sepia-kappa.vercel.app",
+  "https://ecommerce-pxoogj33s-ambar-mittals-projects.vercel.app", // NEW frontend
+  "http://localhost:5173", // local dev
 ];
 
 app.use((req, res, next) => {

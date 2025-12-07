@@ -25,10 +25,18 @@ app.use(cookieParser());
 
 // CORS middleware: allow requests from the frontend dev server and allow credentials (cookies)
 const buildAllowedOrigins = () => {
-	const defaults = ["http://localhost:5173"];
-	if (process.env.FRONTEND_URL) defaults.push(process.env.FRONTEND_URL);
+	const defaults = ["http://localhost:5173" || "*"];
+	const add = (origin) => origin && defaults.push(origin);
+	add(process.env.FRONTEND_URL);
+	add(process.env.BACKEND_URL);
+	add(process.env.RENDER_EXTERNAL_URL);
 	if (process.env.FRONTEND_URLS) {
 		process.env.FRONTEND_URLS.split(",").forEach((origin) => {
+			if (origin?.trim()) defaults.push(origin.trim());
+		});
+	}
+	if (process.env.ADDITIONAL_ALLOWED_ORIGINS) {
+		process.env.ADDITIONAL_ALLOWED_ORIGINS.split(",").forEach((origin) => {
 			if (origin?.trim()) defaults.push(origin.trim());
 		});
 	}
@@ -36,11 +44,16 @@ const buildAllowedOrigins = () => {
 };
 
 const allowedOrigins = buildAllowedOrigins();
+const allowAllOrigins = process.env.CORS_ALLOW_ALL === "true";
 
 app.use((req, res, next) => {
 	const requestOrigin = req.headers.origin;
-	if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
-		res.header("Access-Control-Allow-Origin", requestOrigin);
+	if (requestOrigin) {
+		if (allowAllOrigins) {
+			res.header("Access-Control-Allow-Origin", requestOrigin);
+		} else if (allowedOrigins.includes(requestOrigin)) {
+			res.header("Access-Control-Allow-Origin", requestOrigin);
+		}
 	}
 
 	res.header("Access-Control-Allow-Credentials", "true");

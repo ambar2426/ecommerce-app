@@ -25,7 +25,7 @@ app.use(cookieParser());
 
 // CORS middleware: allow requests from the frontend dev server and allow credentials (cookies)
 const buildAllowedOrigins = () => {
-	const defaults = ["http://localhost:5173" || "*"];
+	const defaults = ["https://ecommerce-app-sepia-kappa.vercel.app/" || "*"];
 	const add = (origin) => origin && defaults.push(origin);
 	add(process.env.FRONTEND_URL);
 	add(process.env.BACKEND_URL);

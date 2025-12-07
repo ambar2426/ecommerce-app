@@ -24,12 +24,20 @@ app.use(express.json({ limit: "10mb" })); // allows you to parse the body of the
 app.use(cookieParser());
 
 // CORS middleware: allow requests from the frontend dev server and allow credentials (cookies)
-app.use((req, res, next) => {
-	const allowedOrigins = ["http://localhost:5173"||process.env.FRONTEND_URL];
-	if (process.env.FRONTEND_URL) allowedOrigins.push(process.env.FRONTEND_URL);
-	// allow the Vite dev server default host for local development
-	allowedOrigins.push("http://localhost:5173");
+const buildAllowedOrigins = () => {
+	const defaults = ["http://localhost:5173"];
+	if (process.env.FRONTEND_URL) defaults.push(process.env.FRONTEND_URL);
+	if (process.env.FRONTEND_URLS) {
+		process.env.FRONTEND_URLS.split(",").forEach((origin) => {
+			if (origin?.trim()) defaults.push(origin.trim());
+		});
+	}
+	return [...new Set(defaults.filter(Boolean))];
+};
 
+const allowedOrigins = buildAllowedOrigins();
+
+app.use((req, res, next) => {
 	const requestOrigin = req.headers.origin;
 	if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
 		res.header("Access-Control-Allow-Origin", requestOrigin);

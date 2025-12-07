@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 import { fileURLToPath } from "url";
 import path from "path";
 import express from "express";
+import cors from "cors";
 import cookieParser from "cookie-parser";
 
 import authRoutes from "./routes/auth.route.js";
@@ -23,52 +24,40 @@ const PORT = process.env.PORT || 5000;
 app.use(express.json({ limit: "10mb" })); // allows you to parse the body of the request
 app.use(cookieParser());
 
-// CORS middleware: allow requests from the frontend dev server and allow credentials (cookies)
-const buildAllowedOrigins = () => {
-	const defaults = ["https://ecommerce-app-sepia-kappa.vercel.app/" || "*"];
-	const add = (origin) => origin && defaults.push(origin);
-	add(process.env.FRONTEND_URL);
-	add(process.env.BACKEND_URL);
-	add(process.env.RENDER_EXTERNAL_URL);
-	if (process.env.FRONTEND_URLS) {
-		process.env.FRONTEND_URLS.split(",").forEach((origin) => {
-			if (origin?.trim()) defaults.push(origin.trim());
-		});
-	}
-	if (process.env.ADDITIONAL_ALLOWED_ORIGINS) {
-		process.env.ADDITIONAL_ALLOWED_ORIGINS.split(",").forEach((origin) => {
-			if (origin?.trim()) defaults.push(origin.trim());
-		});
-	}
-	return [...new Set(defaults.filter(Boolean))];
+// CORS middleware using the official cors package so backend/frontend deployments remain in sync
+const allowAllOrigins = process.env.CORS_ALLOW_ALL === "true";
+const collectOrigins = (...lists) =>
+	lists
+		.flatMap((entry) =>
+			entry
+				?.split?.(",")
+				.map((value) => value.trim()) ??
+				(entry ? [entry] : [])
+		)
+		.filter(Boolean);
+
+const allowedOrigins = collectOrigins(
+	process.env.FRONTEND_URL ?? "https://ecommerce-app-sepia-kappa.vercel.app",
+	process.env.BACKEND_URL,
+	process.env.RENDER_EXTERNAL_URL,
+	process.env.FRONTEND_URLS,
+	process.env.ADDITIONAL_ALLOWED_ORIGINS
+);
+
+const corsOptions = {
+	origin: allowAllOrigins
+		? true
+		: (origin, callback) => {
+			if (!origin) return callback(null, true); // allow same-origin/server-to-server
+			if (allowedOrigins.includes(origin)) return callback(null, true);
+			return callback(new Error(`Origin ${origin} not allowed by CORS`));
+		},
+	methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+	credentials: true,
 };
 
-const allowedOrigins = buildAllowedOrigins();
-const allowAllOrigins = process.env.CORS_ALLOW_ALL === "true";
-
-app.use((req, res, next) => {
-	const requestOrigin = req.headers.origin;
-	if (requestOrigin) {
-		if (allowAllOrigins) {
-			res.header("Access-Control-Allow-Origin", requestOrigin);
-		} else if (allowedOrigins.includes(requestOrigin)) {
-			res.header("Access-Control-Allow-Origin", requestOrigin);
-		}
-	}
-
-	res.header("Access-Control-Allow-Credentials", "true");
-	res.header(
-		"Access-Control-Allow-Headers",
-		"Origin, X-Requested-With, Content-Type, Accept, Authorization"
-	);
-	res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-
-	if (req.method === "OPTIONS") {
-		return res.sendStatus(204);
-	}
-
-	next();
-});
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);

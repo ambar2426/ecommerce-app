@@ -13,6 +13,7 @@
 	"type": "module",
 	"license": "ISC",
 	"dependencies": {
+		"cors": "^2.8.5",
 		"bcryptjs": "^2.4.3",
 		"cloudinary": "^2.8.0",
 		"cookie-parser": "^1.4.6",

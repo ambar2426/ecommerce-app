@@ -32,6 +32,12 @@ const allowedOrigins = [
 ];
 
 /* --------------------------------------------
+   BODY & COOKIE PARSING
+--------------------------------------------- */
+app.use(express.json({ limit: "10mb" }));
+app.use(cookieParser());
+
+/* --------------------------------------------
    MANUAL CORS HEADERS (Required for Render)
 --------------------------------------------- */
 app.use((req, res, next) => {
@@ -63,17 +69,20 @@ app.use((req, res, next) => {
 --------------------------------------------- */
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   })
 );
-
-/* --------------------------------------------
-   BODY & COOKIE PARSING
---------------------------------------------- */
-app.use(express.json({ limit: "10mb" }));
-app.use(cookieParser());
 
 /* --------------------------------------------
    API ROUTES

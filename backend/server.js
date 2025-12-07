@@ -12,29 +12,28 @@ import couponRoutes from "./routes/coupon.route.js";
 import paymentRoutes from "./routes/payment.route.js";
 import analyticsRoutes from "./routes/analytics.route.js";
 
+import { connectDB } from "./lib/db.js";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-dotenv.config({ path: path.join(__dirname, ".env") });
 
-import { connectDB } from "./lib/db.js";
+// Load environment variables
+dotenv.config({ path: path.join(__dirname, ".env") });
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Parse bodies & cookies
-app.use(express.json({ limit: "10mb" }));
-app.use(cookieParser());
-
 /* --------------------------------------------
-   FIXED + RELIABLE CORS CONFIG FOR RENDER
+   FRONTEND URLs (ONLY FRONTEND — NO BACKEND!)
 --------------------------------------------- */
 const allowedOrigins = [
-  "https://ecommerce-app-sepia-kappa.vercel.app",   // your frontend (Vercel)
-  "https://ecommerce-app-9a4d.onrender.com",        // backend URL
-  "http://localhost:5173",                           // local dev
+  "https://ecommerce-app-sepia-kappa.vercel.app", // Your Vercel frontend
+  "http://localhost:5173"                          // Local dev
 ];
 
-// Manual fallback CORS headers (important for OPTIONS)
+/* --------------------------------------------
+   MANUAL CORS HEADERS (Required for Render)
+--------------------------------------------- */
 app.use((req, res, next) => {
   const origin = req.headers.origin;
 
@@ -59,14 +58,22 @@ app.use((req, res, next) => {
   next();
 });
 
-// CORS — express middleware
+/* --------------------------------------------
+   EXPRESS CORS MIDDLEWARE
+--------------------------------------------- */
 app.use(
   cors({
     origin: allowedOrigins,
     credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   })
 );
+
+/* --------------------------------------------
+   BODY & COOKIE PARSING
+--------------------------------------------- */
+app.use(express.json({ limit: "10mb" }));
+app.use(cookieParser());
 
 /* --------------------------------------------
    API ROUTES
@@ -93,6 +100,6 @@ if (process.env.NODE_ENV === "production") {
    START SERVER
 --------------------------------------------- */
 app.listen(PORT, () => {
-  console.log("Server is running on http://localhost:" + PORT);
+  console.log(`Server running at http://localhost:${PORT}`);
   connectDB();
 });

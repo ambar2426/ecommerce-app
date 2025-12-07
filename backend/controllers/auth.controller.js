@@ -28,12 +28,16 @@ const storeRefreshToken = async (userId, refreshToken) => {
 	await redis.set(`refresh_token:${userId}`, refreshToken, "EX", 7 * 24 * 60 * 60); // 7days
 };
 
-const buildCookieOptions = (maxAge) => ({
-	httpOnly: true,
-	secure: process.env.NODE_ENV === "production",
-	sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-	maxAge,
-});
+const buildCookieOptions = (maxAge) => {
+	const isProd = process.env.NODE_ENV === "production";
+	return {
+		httpOnly: true,
+		secure: isProd, // HTTPS only in production
+		sameSite: isProd ? "none" : "lax", // "none" allows cross-site cookies (Vercel ↔ Render)
+		maxAge,
+		...(isProd && { domain: undefined }), // Let browser handle domain for cross-origin
+	};
+};
 
 const accessTokenOptions = buildCookieOptions(15 * 60 * 1000); // 15 minutes
 const refreshTokenOptions = buildCookieOptions(7 * 24 * 60 * 60 * 1000); // 7 days

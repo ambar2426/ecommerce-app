@@ -35,6 +35,7 @@ const buildCookieOptions = (maxAge) => {
 		secure: isProd, // HTTPS only in production
 		sameSite: isProd ? "none" : "lax", // "none" allows cross-site cookies (Vercel ↔ Render)
 		maxAge,
+		path: "/", // Cookie path
 		...(isProd && { domain: undefined }), // Let browser handle domain for cross-origin
 	};
 };
